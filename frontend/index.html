@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACO Path Planner — Group 2 PDC</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+/* ── Reset ────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Tokens ───────────────────────────────────────────────────── */
+:root {
+  --bg:       #0d1117;
+  --surface:  #161b22;
+  --border:   #30363d;
+  --blue:     #58a6ff;
+  --green:    #3fb950;
+  --red:      #f85149;
+  --amber:    #d29922;
+  --text:     #c9d1d9;
+  --muted:    #8b949e;
+  --sidebar:  240px;
+}
+
+/* ── Base ─────────────────────────────────────────────────────── */
+html, body { height: 100%; }
+body {
+  font-family: -apple-system, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Header ───────────────────────────────────────────────────── */
+#header {
+  flex-shrink: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+#header h1 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+#header .subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  border-left: 1px solid var(--border);
+  padding-left: 12px;
+}
+#status-badge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+.badge-idle    { background: #21262d; color: var(--muted); }
+.badge-running { background: #1f3a5f; color: var(--blue);  }
+.badge-done    { background: #1a3325; color: var(--green); }
+.badge-error   { background: #3d1a1a; color: var(--red);   }
+
+/* ── Workspace ────────────────────────────────────────────────── */
+#workspace {
+  flex: 1;
+  display: flex;
+  min-height: 600px;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar);
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.sb-section {
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.sb-title {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.param {
+  margin-bottom: 10px;
+}
+.param-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  color: var(--text);
+  font-size: 12px;
+}
+.param-label span {
+  color: var(--blue);
+  font-weight: 600;
+  font-size: 12px;
+  min-width: 36px;
+  text-align: right;
+}
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 3px;
+  border-radius: 2px;
+  background: #21262d;
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--blue);
+  cursor: pointer;
+  border: 2px solid var(--bg);
+}
+input[type=number] {
+  width: 100%;
+  background: #21262d;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 5px 8px;
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+}
+input[type=number]:focus { border-color: var(--blue); }
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-row input[type=checkbox] { accent-color: var(--blue); width: 14px; height: 14px; cursor: pointer; }
+.toggle-row label { font-size: 12px; color: var(--text); cursor: pointer; }
+
+/* ── Sidebar Actions ──────────────────────────────────────────── */
+#sidebar-actions {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: auto;
+}
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, background 0.15s;
+  width: 100%;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-ghost   { background: transparent; border-color: var(--border); color: var(--text); }
+.btn-ghost:hover:not(:disabled)   { background: #21262d; }
+.btn-primary { background: #1f6feb; border-color: #388bfd; color: #fff; }
+.btn-primary:hover:not(:disabled) { background: #388bfd; }
+.btn-danger  { background: #b91c1c; border-color: #f85149; color: #fff; }
+.btn-danger:hover:not(:disabled)  { background: #dc2626; }
+
+/* ── Main area ────────────────────────────────────────────────── */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+}
+#top-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  flex: 1;
+  min-height: 160px;
+}
+
+/* ── Canvas panel ─────────────────────────────────────────────── */
+#canvas-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+#canvas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+#canvas-header .panel-title { font-size: 12px; font-weight: 600; color: var(--text); }
+#canvas-header .hint { font-size: 11px; color: var(--muted); margin-left: 6px; }
+.btn-xs {
+  padding: 3px 9px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: #21262d;
+  color: var(--text);
+  font-size: 11px;
+  cursor: pointer;
+}
+.btn-xs.active { border-color: var(--blue); color: var(--blue); background: #1f3a5f; }
+#grid-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: crosshair;
+  image-rendering: pixelated;
+}
+#canvas-tooltip {
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--muted);
+  height: 16px;
+}
+
+/* ── Stats bar (horizontal, below canvas+chart) ───────────────── */
+#stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  flex-shrink: 0;
+}
+.stat-card {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  text-align: center;
+  min-width: 0;
+}
+.stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--blue);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--muted);
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
+/* ── Progress bar ─────────────────────────────────────────────── */
+#progress-bar-wrap {
+  flex-shrink: 0;
+  height: 3px;
+  background: #21262d;
+  border-radius: 2px;
+  overflow: hidden;
+}
+#progress-bar {
+  height: 100%;
+  background: var(--blue);
+  width: 0%;
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+/* ── Chart (right column of top-row) ─────────────────────────── */
+#chart-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  min-height: 160px;
+  min-width: 0;
+}
+.panel-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+#chart-wrap {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+/* ── Legend ───────────────────────────────────────────────────── */
+#legend {
+  flex-shrink: 0;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+.swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.sw-free     { background: #2d333b; border: 1px solid var(--border); }
+.sw-phero    { background: linear-gradient(90deg, #7d4e00, #ff6b2b); }
+.sw-obstacle { background: #111827; border: 1px solid #374151; }
+.sw-start    { background: #3fb950; }
+.sw-goal     { background: #f85149; }
+.sw-path     { background: #58a6ff; }
+
+/* ── Toast ────────────────────────────────────────────────────── */
+#toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  max-width: 320px;
+  z-index: 999;
+}
+#toast.show { opacity: 1; }
+#toast.toast-ok  { background: #1a3325; border: 1px solid var(--green); color: var(--green); }
+#toast.toast-err { background: #3d1a1a; border: 1px solid var(--red);   color: var(--red);   }
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────── -->
+<div id="header">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+  <h1>ACO Path Planner</h1>
+  <span class="subtitle">Ant Colony Optimisation &mdash; Group 2 PDC</span>
+  <div id="status-badge" class="badge-idle">● IDLE</div>
+</div>
+
+<!-- ── Workspace ───────────────────────────────────────────────── -->
+<div id="workspace">
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="sb-section">
+      <div class="sb-title">Grid</div>
+
+      <div class="param">
+        <div class="param-label">Grid Size (N) <span id="v-n">20</span></div>
+        <input type="range" id="p-n" min="8" max="40" value="20" step="1">
+      </div>
+      <div class="param">
+        <div class="param-label">Obstacle Density <span id="v-density">0.20</span></div>
+        <input type="range" id="p-density" min="0.05" max="0.55" value="0.20" step="0.05">
+      </div>
+      <div class="param">
+        <div class="param-label">Seed</div>
+        <input type="number" id="p-seed" value="42" min="0" max="99999">
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-title">ACO Parameters</div>
+
+      <div class="param">
+        <div class="param-label">Ants <span id="v-ants">30</span></div>
+        <input type="range" id="p-ants" min="5" max="100" value="30" step="5">
+      </div>
+      <div class="param">
+        <div class="param-label">Iterations <span id="v-iters">100</span></div>
+        <input type="range" id="p-iters" min="10" max="500" value="100" step="10">
+      </div>
+      <div class="param">
+        <div class="param-label">Alpha (pheromone) <span id="v-alpha">1.0</span></div>
+        <input type="range" id="p-alpha" min="0.1" max="5.0" value="1.0" step="0.1">
+      </div>
+      <div class="param">
+        <div class="param-label">Beta (heuristic) <span id="v-beta">2.5</span></div>
+        <input type="range" id="p-beta" min="0.5" max="10.0" value="2.5" step="0.5">
+      </div>
+      <div class="param">
+        <div class="param-label">Rho (evaporation) <span id="v-rho">0.10</span></div>
+        <input type="range" id="p-rho" min="0.01" max="0.50" value="0.10" step="0.01">
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-title">Options</div>
+      <label class="toggle-row">
+        <input type="checkbox" id="p-parallel" checked>
+        <label for="p-parallel">Parallel (multi-process)</label>
+      </label>
+      <label class="toggle-row">
+        <input type="checkbox" id="p-dynamic">
+        <label for="p-dynamic">Dynamic obstacles</label>
+      </label>
+      <label class="toggle-row">
+        <input type="checkbox" id="p-heatmap" checked>
+        <label for="p-heatmap">Pheromone heatmap</label>
+      </label>
+    </div>
+
+    <div id="sidebar-actions">
+      <button id="btn-preview" class="btn btn-ghost">&#9634; Preview Grid</button>
+      <button id="btn-run"     class="btn btn-primary">&#9654; Run ACO</button>
+      <button id="btn-stop"    class="btn btn-danger" disabled>&#9632; Stop</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main id="main">
+    <div id="top-row">
+
+      <!-- Canvas panel -->
+      <div id="canvas-panel">
+        <div id="canvas-header">
+          <span>
+            <span class="panel-title">Grid</span>
+            <span class="hint">(click to toggle obstacle)</span>
+          </span>
+        </div>
+        <canvas id="grid-canvas"></canvas>
+        <div id="canvas-tooltip">&nbsp;</div>
+      </div>
+
+      <!-- Right panel: convergence chart only -->
+      <div id="chart-panel">
+        <div class="panel-title">Convergence</div>
+        <div id="chart-wrap">
+          <canvas id="conv-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats bar -->
+    <div id="stats-bar">
+      <div class="stat-card">
+        <div class="stat-value" id="sv-iter">—</div>
+        <div class="stat-label">Iteration</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="sv-length">—</div>
+        <div class="stat-label">Best Length</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="sv-ants">—</div>
+        <div class="stat-label">Valid Ants</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="sv-time">—</div>
+        <div class="stat-label">ms / Iter</div>
+      </div>
+    </div>
+
+    <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+
+    <!-- Legend -->
+    <div id="legend">
+      <div class="leg"><span class="swatch sw-free"></span>Free cell</div>
+      <div class="leg"><span class="swatch sw-phero"></span>Pheromone trail</div>
+      <div class="leg"><span class="swatch sw-obstacle"></span>Obstacle</div>
+      <div class="leg"><span class="swatch sw-start"></span>Start (S)</div>
+      <div class="leg"><span class="swatch sw-goal"></span>Goal (G)</div>
+      <div class="leg"><span class="swatch sw-path"></span>Best path</div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Constants ────────────────────────────────────────────────────
+const CANVAS_PX = 480;
+
+// ── State ────────────────────────────────────────────────────────
+const S = {
+  N: 20, density: 0.20, seed: 42,
+  nAnts: 30, nIters: 100,
+  alpha: 1.0, beta: 2.5, rho: 0.10,
+  parallel: true, dynamic: false, heatmap: true,
+
+  cells: null, start: [0, 0], goal: [19, 19],
+  pheromone: null, bestPath: null,
+
+  isRunning: false,
+  abortCtrl: null,
+  currentIter: 0, totalIters: 100,
+  bestLength: null, validAnts: 0, iterTime: 0,
+};
+
+// ── Canvas setup ─────────────────────────────────────────────────
+const canvas = document.getElementById('grid-canvas');
+const ctx    = canvas.getContext('2d');
+canvas.width  = CANVAS_PX;
+canvas.height = CANVAS_PX;
+
+// Canvas renders internally at CANVAS_PX × CANVAS_PX; CSS sizing handled by flexbox.
+
+// ── Chart setup ──────────────────────────────────────────────────
+Chart.defaults.color       = '#8b949e';
+Chart.defaults.borderColor = '#21262d';
+
+const convChart = new Chart(
+  document.getElementById('conv-chart').getContext('2d'),
+  {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Best Path Length',
+        data: [],
+        borderColor: '#58a6ff',
+        backgroundColor: 'rgba(88,166,255,0.08)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 0,
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: c => `Length: ${c.parsed.y.toFixed(2)}` }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Iteration', color: '#8b949e', font: { size: 11 } },
+          ticks: { color: '#8b949e', maxTicksLimit: 7, font: { size: 10 } },
+          grid:  { color: '#21262d' },
+        },
+        y: {
+          title: { display: true, text: 'Best Length', color: '#8b949e', font: { size: 11 } },
+          ticks: { color: '#8b949e', font: { size: 10 } },
+          grid:  { color: '#21262d' },
+        }
+      }
+    }
+  }
+);
+
+function resetChart() {
+  convChart.data.labels = [];
+  convChart.data.datasets[0].data = [];
+  convChart.update('none');
+}
+function pushChart(iter, val) {
+  convChart.data.labels.push(iter);
+  convChart.data.datasets[0].data.push(val);
+  convChart.update('none');
+}
+
+// ── Color helpers ─────────────────────────────────────────────────
+const PH_STOPS = [
+  [0.00,  28,  33,  40],
+  [0.30, 125,  78,   0],
+  [0.65, 212, 160,  23],
+  [1.00, 255, 107,  43],
+];
+
+function phColor(t) {
+  t = Math.max(0, Math.min(1, t));
+  let i = 0;
+  while (i < PH_STOPS.length - 2 && t > PH_STOPS[i + 1][0]) i++;
+  const [t0, r0, g0, b0] = PH_STOPS[i];
+  const [t1, r1, g1, b1] = PH_STOPS[i + 1];
+  const s = (t - t0) / (t1 - t0);
+  return `rgb(${~~(r0+(r1-r0)*s)},${~~(g0+(g1-g0)*s)},${~~(b0+(b1-b0)*s)})`;
+}
+
+// ── Grid drawing ──────────────────────────────────────────────────
+function drawGrid() {
+  const cs = CANVAS_PX / S.N;
+  ctx.clearRect(0, 0, CANVAS_PX, CANVAS_PX);
+
+  if (!S.cells) {
+    ctx.fillStyle = '#161b22';
+    ctx.fillRect(0, 0, CANVAS_PX, CANVAS_PX);
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Click "Preview Grid" to start', CANVAS_PX / 2, CANVAS_PX / 2);
+    return;
+  }
+
+  for (let r = 0; r < S.N; r++) {
+    for (let c = 0; c < S.N; c++) {
+      const isStart = r === S.start[0] && c === S.start[1];
+      const isGoal  = r === S.goal[0]  && c === S.goal[1];
+
+      if (isStart)              ctx.fillStyle = '#3fb950';
+      else if (isGoal)          ctx.fillStyle = '#f85149';
+      else if (S.cells[r][c])   ctx.fillStyle = '#0d1117';
+      else if (S.heatmap && S.pheromone)
+                                ctx.fillStyle = phColor(S.pheromone[r][c]);
+      else                      ctx.fillStyle = '#2d333b';
+
+      ctx.fillRect(c * cs, r * cs, cs, cs);
+    }
+  }
+
+  // Cell grid lines (only if cells are large enough)
+  if (cs >= 10) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= S.N; i++) {
+      ctx.beginPath(); ctx.moveTo(i * cs, 0);      ctx.lineTo(i * cs, CANVAS_PX); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i * cs);      ctx.lineTo(CANVAS_PX, i * cs); ctx.stroke();
+    }
+  }
+
+  // Best path line
+  if (S.bestPath && S.bestPath.length > 1) {
+    ctx.strokeStyle = '#58a6ff';
+    ctx.lineWidth   = Math.max(1.5, cs * 0.3);
+    ctx.lineJoin    = 'round';
+    ctx.lineCap     = 'round';
+    ctx.beginPath();
+    ctx.moveTo((S.bestPath[0][1] + 0.5) * cs, (S.bestPath[0][0] + 0.5) * cs);
+    for (let i = 1; i < S.bestPath.length; i++) {
+      ctx.lineTo((S.bestPath[i][1] + 0.5) * cs, (S.bestPath[i][0] + 0.5) * cs);
+    }
+    ctx.stroke();
+  }
+
+  // S / G labels
+  const fs = Math.max(8, Math.min(cs * 0.55, 18));
+  ctx.font          = `bold ${fs}px sans-serif`;
+  ctx.textAlign     = 'center';
+  ctx.textBaseline  = 'middle';
+  ctx.fillStyle     = '#fff';
+  ctx.fillText('S', (S.start[1] + 0.5) * cs, (S.start[0] + 0.5) * cs);
+  ctx.fillText('G', (S.goal[1]  + 0.5) * cs, (S.goal[0]  + 0.5) * cs);
+}
+
+// ── Stats update ──────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('sv-iter').textContent =
+    S.currentIter ? `${S.currentIter}/${S.totalIters}` : '—';
+  document.getElementById('sv-length').textContent =
+    S.bestLength != null ? S.bestLength.toFixed(2) : '—';
+  document.getElementById('sv-ants').textContent =
+    S.currentIter ? `${S.validAnts}/${S.nAnts}` : '—';
+  document.getElementById('sv-time').textContent =
+    S.currentIter ? `${(S.iterTime * 1000).toFixed(0)}ms` : '—';
+  document.getElementById('progress-bar').style.width =
+    S.totalIters ? `${(S.currentIter / S.totalIters) * 100}%` : '0%';
+}
+
+// ── Status badge ──────────────────────────────────────────────────
+function setStatus(s) {
+  const el = document.getElementById('status-badge');
+  el.className = '';
+  const map = { IDLE: ['badge-idle','● IDLE'], RUNNING: ['badge-running','● RUNNING'],
+                DONE: ['badge-done','● DONE'], ERROR: ['badge-error','● ERROR'] };
+  const [cls, txt] = map[s] || map.IDLE;
+  el.classList.add(cls);
+  el.textContent = txt;
+}
+
+// ── Controls enable/disable ───────────────────────────────────────
+function syncControls() {
+  document.getElementById('btn-run').disabled     =  S.isRunning;
+  document.getElementById('btn-stop').disabled    = !S.isRunning;
+  document.getElementById('btn-preview').disabled =  S.isRunning;
+}
+
+// ── Toast ─────────────────────────────────────────────────────────
+let _toastTimer;
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show toast-${type}`;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.className = ''; }, 3500);
+}
+
+// ── Param bindings ────────────────────────────────────────────────
+function bindRange(id, valId, key, fmt) {
+  const el = document.getElementById(id);
+  const vl = document.getElementById(valId);
+  el.addEventListener('input', () => {
+    const v = parseFloat(el.value);
+    S[key] = (fmt === 'int') ? ~~v : v;
+    vl.textContent = (fmt === 'int') ? ~~v : v.toFixed(fmt ?? 2);
+  });
+}
+bindRange('p-n',       'v-n',       'N',       'int');
+bindRange('p-density', 'v-density', 'density', 2);
+bindRange('p-ants',    'v-ants',    'nAnts',   'int');
+bindRange('p-iters',   'v-iters',   'nIters',  'int');
+bindRange('p-alpha',   'v-alpha',   'alpha',   1);
+bindRange('p-beta',    'v-beta',    'beta',    1);
+bindRange('p-rho',     'v-rho',     'rho',     2);
+
+document.getElementById('p-seed').addEventListener('input', e => { S.seed = parseInt(e.target.value) || 0; });
+document.getElementById('p-parallel').addEventListener('change', e => { S.parallel = e.target.checked; });
+document.getElementById('p-dynamic').addEventListener('change',  e => { S.dynamic  = e.target.checked; });
+document.getElementById('p-heatmap').addEventListener('change',  e => { S.heatmap  = e.target.checked; drawGrid(); });
+
+// ── Grid preview ──────────────────────────────────────────────────
+async function previewGrid() {
+  try {
+    const res  = await fetch('/api/grid-preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ N: S.N, density: S.density, seed: S.seed }),
+    });
+    const data = await res.json();
+    S.cells    = data.cells;
+    S.start    = data.start;
+    S.goal     = data.goal;
+    S.N        = data.cells.length;
+    S.pheromone = null;
+    S.bestPath  = null;
+    S.currentIter = 0;
+    updateStats();
+    drawGrid();
+    if (!data.has_path) toast('Warning: no valid path found at this density!', 'err');
+  } catch (e) {
+    toast('Preview failed: ' + e.message, 'err');
+  }
+}
+
+// ── Run ACO ───────────────────────────────────────────────────────
+async function runACO() {
+  if (S.isRunning) return;
+  if (!S.cells) await previewGrid();
+
+  S.isRunning   = true;
+  S.currentIter = 0;
+  S.bestLength  = null;
+  S.bestPath    = null;
+  S.pheromone   = null;
+  S.totalIters  = S.nIters;
+  resetChart();
+  updateStats();
+  setStatus('RUNNING');
+  syncControls();
+
+  S.abortCtrl = new AbortController();
+  const params = {
+    N: S.N, density: S.density, seed: S.seed,
+    n_ants: S.nAnts, n_iterations: S.nIters,
+    alpha: S.alpha, beta: S.beta, rho: S.rho,
+    parallel: S.parallel, dynamic: S.dynamic,
+    cells: S.cells, start: S.start, goal: S.goal,
+  };
+
+  try {
+    const resp = await fetch('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+      signal: S.abortCtrl.signal,
+    });
+
+    const reader  = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try { handleEvent(JSON.parse(line.slice(6))); } catch (_) {}
+        }
+      }
+    }
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      toast('Run error: ' + e.message, 'err');
+      setStatus('ERROR');
+    }
+  } finally {
+    S.isRunning = false;
+    syncControls();
+  }
+}
+
+function handleEvent(ev) {
+  switch (ev.type) {
+    case 'grid':
+      S.cells = ev.cells;
+      S.start = ev.start;
+      S.goal  = ev.goal;
+      S.N     = ev.cells.length;
+      drawGrid();
+      break;
+
+    case 'progress':
+      if (ev.cells)     S.cells     = ev.cells;
+      if (ev.pheromone) S.pheromone = ev.pheromone;
+      if (ev.best_path) S.bestPath  = ev.best_path;
+      S.currentIter = ev.iteration;
+      S.totalIters  = ev.total;
+      S.bestLength  = ev.best_length;
+      S.validAnts   = ev.valid_ants;
+      S.iterTime    = ev.iter_time;
+      drawGrid();
+      updateStats();
+      if (ev.best_length != null) pushChart(ev.iteration, ev.best_length);
+      break;
+
+    case 'done':
+      if (ev.best_path)  S.bestPath  = ev.best_path;
+      if (ev.best_length != null) S.bestLength = ev.best_length;
+      drawGrid();
+      updateStats();
+      setStatus('DONE');
+      toast(`Done! Best path length: ${S.bestLength?.toFixed(2) ?? 'n/a'}`, 'ok');
+      break;
+
+    case 'error':
+      toast(ev.message, 'err');
+      setStatus('ERROR');
+      break;
+  }
+}
+
+// ── Stop ──────────────────────────────────────────────────────────
+function stopACO() {
+  S.abortCtrl?.abort();
+  S.isRunning = false;
+  setStatus('IDLE');
+  syncControls();
+}
+
+// ── Canvas interaction ────────────────────────────────────────────
+canvas.addEventListener('click', e => {
+  if (S.isRunning || !S.cells) return;
+  const { r, c } = canvasCell(e);
+  if (r < 0) return;
+  if (r === S.start[0] && c === S.start[1]) return;
+  if (r === S.goal[0]  && c === S.goal[1])  return;
+  S.cells[r][c] = S.cells[r][c] ? 0 : 1;
+  S.pheromone   = null;
+  S.bestPath    = null;
+  drawGrid();
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (!S.cells) return;
+  const { r, c } = canvasCell(e);
+  const tip = document.getElementById('canvas-tooltip');
+  if (r < 0) { tip.textContent = '\u00a0'; return; }
+  const isObs = S.cells[r][c] === 1;
+  const ph = S.pheromone ? S.pheromone[r][c].toFixed(3) : '—';
+  tip.textContent = `(${r}, ${c})  ${isObs ? '■ obstacle' : '□ free'}  pheromone: ${ph}`;
+});
+canvas.addEventListener('mouseleave', () => {
+  document.getElementById('canvas-tooltip').textContent = '\u00a0';
+});
+
+function canvasCell(e) {
+  const rect   = canvas.getBoundingClientRect();
+  const scaleX = CANVAS_PX / rect.width;
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top)  * scaleX;
+  const cs = CANVAS_PX / S.N;
+  const c  = Math.floor(x / cs);
+  const r  = Math.floor(y / cs);
+  return (r >= 0 && r < S.N && c >= 0 && c < S.N) ? { r, c } : { r: -1, c: -1 };
+}
+
+// ── Button wiring ─────────────────────────────────────────────────
+document.getElementById('btn-preview').addEventListener('click', previewGrid);
+document.getElementById('btn-run').addEventListener('click', runACO);
+document.getElementById('btn-stop').addEventListener('click', stopACO);
+
+// ── Init ──────────────────────────────────────────────────────────
+previewGrid();
+</script>
+</body>
+</html>

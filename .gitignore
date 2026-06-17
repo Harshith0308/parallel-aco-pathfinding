@@ -1,0 +1,30 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# ---- C build artifacts ----
+*.o
+*.obj
+*.exe
+*.out
+c_src/aco
+c_src/aco_demo
+
+# ---- Editors / IDE / OS ----
+.vscode/
+.idea/
+.claude/
+*.swp
+.DS_Store
+Thumbs.db
