@@ -37,8 +37,7 @@ The project ships with:
 
 ## Live web interface
 
-Run `python server.py` and open <http://localhost:5000>. The grid is fully
-interactive — adjust parameters on the left, preview a layout, and click **Run ACO**
+The grid is fully interactive — adjust parameters on the left, preview a layout, and click **Run ACO**
 to stream the search live.
 
 <p align="center">
