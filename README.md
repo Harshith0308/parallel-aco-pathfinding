@@ -6,10 +6,11 @@ Each ant explores independently, so path construction is **parallelized** — us
 `multiprocessing` in Python (to bypass the GIL) and `#pragma omp parallel for`
 in the C/OpenMP version.
 
-![ACO Path Planner — live web dashboard](docs/screenshots/web-dashboard.jpg)
+![ACO Path Planner — interactive web dashboard](docs/screenshots/web-dashboard.jpg)
 
-<p align="center"><em>The live web dashboard: a 20×20 grid with the pheromone heatmap (orange),
-the converged best path from start (S) to goal (G) in blue, and the convergence curve on the right.</em></p>
+<p align="center"><em>The interactive web dashboard (run locally with <code>python server.py</code>):
+a 20×20 grid with the pheromone heatmap (orange), the converged best path from start (S)
+to goal (G) in blue, and the convergence curve on the right.</em></p>
 
 The project ships with:
 
@@ -35,10 +36,12 @@ The project ships with:
   per-iteration timing stream in as the search runs.
 - **Speedup benchmarking** — measure sequential vs multi-process runtime.
 
-## Live web interface
+## Web interface
 
-The grid is fully interactive — adjust parameters on the left, preview a layout, and click **Run ACO**
-to stream the search live.
+This is a locally-run application, not a hosted website. Start it on your own machine
+with `python server.py` and open `http://localhost:5000` in your browser. The grid is
+fully interactive — adjust parameters on the left, preview a layout, and click **Run ACO**
+to watch the search converge in real time.
 
 <p align="center">
   <img src="docs/screenshots/web-grid-result.png" width="420" alt="Converged path on the grid">
@@ -108,9 +111,9 @@ This runs:
 python server.py
 ```
 
-You can set grid size, obstacle density,
-ant/iteration counts, and ACO hyper-parameters (`alpha`, `beta`, `rho`), then
-watch the search converge live.
+Then open `http://localhost:5000` in your browser. The app runs entirely on your own
+machine. You can set grid size, obstacle density, ant/iteration counts, and ACO
+hyper-parameters (`alpha`, `beta`, `rho`), then watch the search converge in real time.
 
 ### 3. Build & run the C / OpenMP version
 
