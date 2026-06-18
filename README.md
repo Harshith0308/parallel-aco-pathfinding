@@ -1,7 +1,5 @@
 # ACO Grid-Based Robot Path Planning with Obstacles
 
-> Group 2 — Parallel and Distributed Computing (Semester 6)
-
 A parallelized **Ant Colony Optimization (ACO)** pathfinder that guides a robot
 across a 2D grid from a start cell to a goal cell while avoiding obstacles.
 Each ant explores independently, so path construction is **parallelized** — using
