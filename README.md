@@ -23,19 +23,19 @@ The project ships with:
 
 ## Features
 
-- 🐜 **Parallel ACO solver** — ants explore independently, so each iteration's path
+- **Parallel ACO solver** — ants explore independently, so each iteration's path
   construction is distributed across CPU cores via `multiprocessing.Pool`.
-- 🌐 **Interactive web app** — tune grid size, obstacle density, ant/iteration counts
+- **Interactive web app** — tune grid size, obstacle density, ant/iteration counts
   and the `alpha`/`beta`/`rho` hyper-parameters with live sliders, then watch the
   colony converge in real time.
-- ✏️ **Editable grid** — click any cell to toggle an obstacle, or regenerate a random
+- **Editable grid** — click any cell to toggle an obstacle, or regenerate a random
   layout from a seed.
-- 🔥 **Pheromone heatmap** — see where the colony is laying down trails, updated every
+- **Pheromone heatmap** — see where the colony is laying down trails, updated every
   iteration.
-- 🧱 **Dynamic obstacles** — optionally inject new walls mid-run and watch the path re-route.
-- 📊 **Live convergence chart + stats** — best path length, valid-ant count, and
+- **Dynamic obstacles** — optionally inject new walls mid-run and watch the path re-route.
+- **Live convergence chart and stats** — best path length, valid-ant count, and
   per-iteration timing stream in as the search runs.
-- ⚡ **Speedup benchmarking** — measure sequential vs multi-process runtime.
+- **Speedup benchmarking** — measure sequential vs multi-process runtime.
 
 ## Live web interface
 
