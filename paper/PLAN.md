@@ -37,9 +37,10 @@ report — that framing is what makes it publishable given how well-studied ACO 
       Amdahl serial fraction, serialization overhead, quality trend)
 - [ ] Fill remaining `[[FILL]]` markers — your **author affiliation** (dept /
       university / city) on lines 27–29 of `main.tex`
-- [ ] **Literature review** — expand Related Work with ~10 more real references
-      (ACO path planning + parallel ACO) and verify them. Biggest remaining task.
-      Follow `literature/SEARCH_GUIDE.md` and fill `literature/related_work_matrix.md`.
+- [x] **Literature review** — Related Work written with 16 verified references
+      (foundational ACO, ACO path planning, parallel/GPU ACO, performance models),
+      all in `tex/refs.bib` with DOIs; matrix filled in `literature/`.
+      **You still must read the papers you cite** before submission.
 - [x] Unify the infeasible-grid policy: both back-ends now solve the *identical*
       feasibility-checked grid per density (shared `--grid` files); silent
       density-lowering removed. Phase B is now a true per-instance comparison.

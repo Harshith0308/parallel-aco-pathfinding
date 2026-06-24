@@ -81,28 +81,39 @@ workload. (4)~A study of solution quality versus obstacle density.
 % ===========================================================================
 \section{Related Work}
 \label{sec:related}
-\textbf{ACO and variants.} ACO was introduced as the Ant System~\cite{dorigo1996ant}
-and later generalized~\cite{dorigo2004aco}; the MAX--MIN Ant System~\cite{stutzle2000maxmin}
-is a widely used refinement that bounds pheromone values to avoid premature
-convergence.
+\textbf{ACO and its variants.} ACO was introduced as the Ant
+System~\cite{dorigo1996ant} and strengthened by the Ant Colony
+System~\cite{dorigo1997acs} and the MAX--MIN Ant System~\cite{stutzle2000maxmin},
+which bounds pheromone values to avoid premature convergence; comprehensive
+treatments appear in~\cite{dorigo2004aco,dorigo2006aco}. We adopt a standard
+Ant-System-style pheromone update and do not propose an algorithmic variant; our
+focus is the parallel execution model.
 
-\textbf{Parallel ACO.} Because ant path construction is independent within an
-iteration, ACO is a natural target for parallelization. Randall and
-Lewis~\cite{randall2002parallel} categorize parallelization strategies and give a
-parallel implementation. Our study differs by holding the algorithm fixed and
-\emph{contrasting two execution models}---shared-memory threads vs separate
-processes---on the same workload, rather than proposing a new parallel variant.
+\textbf{ACO for path planning.} ACO is widely used for mobile-robot and
+grid-based path planning. Ali et al.~\cite{ali2020pathplanning} combine an
+improved ACO with a Markov decision process to smooth trajectories in grid
+environments, while island- and pheromone-initialization schemes target faster
+convergence and deadlock avoidance~\cite{li2024islands}. These works improve
+\emph{solution quality} on a sequential solver, whereas we study how the choice of
+parallel execution affects \emph{performance}.
+
+\textbf{Parallel and GPU ACO.} Because ant path construction is independent within
+an iteration, ACO parallelizes naturally; Pedemonte et al. survey the design
+space~\cite{pedemonte2011survey}. Early CPU strategies include parallel
+independent runs and master--worker schemes~\cite{stutzle1998parallel,randall2002parallel},
+and GPU implementations report large speedups via fine-grained data
+parallelism~\cite{delevacq2013gpu,cecilia2013enhancing}. Closest to our
+application, Si and Bao~\cite{si2024parallel} propose a parallel ACO for robot path
+planning. Unlike these efforts---which propose new parallel \emph{algorithms} or
+target GPUs---we hold a single algorithm fixed and empirically contrast two CPU
+execution models, process-based (Python \texttt{multiprocessing}) versus
+thread-based (C/OpenMP), on identical instances, isolating the data-movement cost
+intrinsic to process-based parallelism.
 
 \textbf{Performance modeling.} Parallel scaling is classically bounded by
 Amdahl's law~\cite{amdahl1967}, with the scaled-workload view from
 Gustafson~\cite{gustafson1988}; we use OpenMP~\cite{dagum1998openmp} as the
 shared-memory model and fit Amdahl's law to our measured speedup.
-
-\noindent\textbf{[[FILL: expand this section with $\approx$10 more references you
-find and read yourself --- especially recent ACO-for-robot/grid-path-planning
-work and GPU/multi-core parallel ACO --- and state explicitly how your empirical
-comparison differs from each. This remains the most important task for peer
-review.]]}
 
 % ===========================================================================
 \section{Background: ACO for Grid Path Planning}
