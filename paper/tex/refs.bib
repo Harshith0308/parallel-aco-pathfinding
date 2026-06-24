@@ -1,0 +1,149 @@
+% ---------------------------------------------------------------------------
+% Bibliography for the parallel-ACO empirical study.
+% All entries were located via literature search and their venue/year/pages
+% verified. PLEASE still open each DOI once and confirm the fields before final
+% submission (good scholarly hygiene), and read each paper you cite.
+% ---------------------------------------------------------------------------
+
+% ===== Foundational ACO =====================================================
+
+@article{dorigo1996ant,
+  author  = {Dorigo, Marco and Maniezzo, Vittorio and Colorni, Alberto},
+  title   = {Ant System: Optimization by a Colony of Cooperating Agents},
+  journal = {IEEE Transactions on Systems, Man, and Cybernetics, Part B},
+  volume  = {26}, number = {1}, pages = {29--41}, year = {1996},
+  doi     = {10.1109/3477.484436},
+}
+
+@article{dorigo1997acs,
+  author  = {Dorigo, Marco and Gambardella, Luca Maria},
+  title   = {Ant Colony System: A Cooperative Learning Approach to the
+             Traveling Salesman Problem},
+  journal = {IEEE Transactions on Evolutionary Computation},
+  volume  = {1}, number = {1}, pages = {53--66}, year = {1997},
+  doi     = {10.1109/4235.585892},
+}
+
+@article{stutzle2000maxmin,
+  author  = {St{\"u}tzle, Thomas and Hoos, Holger H.},
+  title   = {{MAX}--{MIN} Ant System},
+  journal = {Future Generation Computer Systems},
+  volume  = {16}, number = {8}, pages = {889--914}, year = {2000},
+  doi     = {10.1016/S0167-739X(00)00043-1},
+}
+
+@book{dorigo2004aco,
+  author    = {Dorigo, Marco and St{\"u}tzle, Thomas},
+  title     = {Ant Colony Optimization},
+  publisher = {MIT Press}, year = {2004},
+}
+
+@article{dorigo2006aco,
+  author  = {Dorigo, Marco and Birattari, Mauro and St{\"u}tzle, Thomas},
+  title   = {Ant Colony Optimization: Artificial Ants as a Computational
+             Intelligence Technique},
+  journal = {IEEE Computational Intelligence Magazine},
+  volume  = {1}, number = {4}, pages = {28--39}, year = {2006},
+  doi     = {10.1109/MCI.2006.329691},
+}
+
+% ===== ACO for path planning ================================================
+
+@article{ali2020pathplanning,
+  author  = {Ali, Hub and Gong, Dawei and Wang, Meng and Dai, Xiaolin},
+  title   = {Path Planning of Mobile Robot With Improved Ant Colony Algorithm
+             and {MDP} to Produce Smooth Trajectory in Grid-Based Environment},
+  journal = {Frontiers in Neurorobotics},
+  volume  = {14}, pages = {44}, year = {2020},
+  doi     = {10.3389/fnbot.2020.00044},
+}
+
+@article{si2024parallel,
+  author  = {Si, Jian and Bao, Xiaoguang},
+  title   = {A Novel Parallel Ant Colony Optimization Algorithm for Mobile
+             Robot Path Planning},
+  journal = {Mathematical Biosciences and Engineering},
+  volume  = {21}, number = {2}, pages = {2568--2586}, year = {2024},
+  doi     = {10.3934/mbe.2024113},
+}
+
+@article{li2024islands,
+  author  = {Li, Qian and Li, Qipeng and Cui, Baoling},
+  title   = {Improved Ant Colony Optimization Algorithm Based on Islands Type
+             for Mobile Robot Path Planning},
+  journal = {International Journal of Advanced Robotic Systems},
+  volume  = {21}, number = {5}, year = {2024},
+  doi     = {10.1177/17298806241278170},
+}
+
+% ===== Parallel / GPU ACO ===================================================
+
+@incollection{stutzle1998parallel,
+  author    = {St{\"u}tzle, Thomas},
+  title     = {Parallelization Strategies for Ant Colony Optimization},
+  booktitle = {Parallel Problem Solving from Nature --- PPSN V},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {1498}, pages = {722--731}, year = {1998},
+  publisher = {Springer}, doi = {10.1007/BFb0056914},
+}
+
+@article{randall2002parallel,
+  author  = {Randall, Marcus and Lewis, Andrew},
+  title   = {A Parallel Implementation of Ant Colony Optimization},
+  journal = {Journal of Parallel and Distributed Computing},
+  volume  = {62}, number = {9}, pages = {1421--1432}, year = {2002},
+  doi     = {10.1006/jpdc.2002.1854},
+}
+
+@article{pedemonte2011survey,
+  author  = {Pedemonte, Mart{\'i}n and Nesmachnow, Sergio and Cancela, H{\'e}ctor},
+  title   = {A Survey on Parallel Ant Colony Optimization},
+  journal = {Applied Soft Computing},
+  volume  = {11}, number = {8}, pages = {5181--5197}, year = {2011},
+  doi     = {10.1016/j.asoc.2011.05.042},
+}
+
+@article{delevacq2013gpu,
+  author  = {Del{\'e}vacq, Audrey and Delisle, Pierre and Gravel, Marc and
+             Krajecki, Micha{\"e}l},
+  title   = {Parallel Ant Colony Optimization on Graphics Processing Units},
+  journal = {Journal of Parallel and Distributed Computing},
+  volume  = {73}, number = {1}, pages = {52--61}, year = {2013},
+  doi     = {10.1016/j.jpdc.2012.01.003},
+}
+
+@article{cecilia2013enhancing,
+  author  = {Cecilia, Jos{\'e} M. and Garc{\'i}a, Jos{\'e} M. and Nisbet, Andy
+             and Amos, Martyn and Ujald{\'o}n, Manuel},
+  title   = {Enhancing Data Parallelism for Ant Colony Optimization on {GPUs}},
+  journal = {Journal of Parallel and Distributed Computing},
+  volume  = {73}, number = {1}, pages = {42--51}, year = {2013},
+  doi     = {10.1016/j.jpdc.2012.01.002},
+}
+
+% ===== Parallel performance modeling ========================================
+
+@inproceedings{amdahl1967,
+  author    = {Amdahl, Gene M.},
+  title     = {Validity of the Single Processor Approach to Achieving
+               Large Scale Computing Capabilities},
+  booktitle = {AFIPS Spring Joint Computer Conference},
+  pages     = {483--485}, year = {1967},
+  doi       = {10.1145/1465482.1465560},
+}
+
+@article{gustafson1988,
+  author  = {Gustafson, John L.},
+  title   = {Reevaluating Amdahl's Law},
+  journal = {Communications of the ACM},
+  volume  = {31}, number = {5}, pages = {532--533}, year = {1988},
+  doi     = {10.1145/42411.42415},
+}
+
+@article{dagum1998openmp,
+  author  = {Dagum, Leonardo and Menon, Ramesh},
+  title   = {{OpenMP}: An Industry Standard {API} for Shared-Memory Programming},
+  journal = {IEEE Computational Science and Engineering},
+  volume  = {5}, number = {1}, pages = {46--55}, year = {1998},
+  doi     = {10.1109/99.660313},
+}
