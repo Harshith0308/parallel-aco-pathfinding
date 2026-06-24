@@ -39,6 +39,34 @@ static int    flag(int argc, char **argv, const char *key) {
         if (strcmp(argv[i], key) == 0) return 1;
     return 0;
 }
+static const char *arg_s(int argc, char **argv, const char *key, const char *def) {
+    for (int i = 1; i < argc - 1; i++)
+        if (strcmp(argv[i], key) == 0) return argv[i + 1];
+    return def;
+}
+
+/* Load a grid from a shared text file so the Python and C back-ends solve the
+   IDENTICAL instance. Format:
+     line 1:  N start_r start_c goal_r goal_c
+     N lines: N chars each, '0' = free, '1' = obstacle                       */
+static int load_grid(Grid *g, const char *path, double density) {
+    FILE *f = fopen(path, "r");
+    if (!f) return 0;
+    int N, sr, sc, gr, gc;
+    if (fscanf(f, "%d %d %d %d %d", &N, &sr, &sc, &gr, &gc) != 5) { fclose(f); return 0; }
+    if (N > MAX_N) N = MAX_N;
+    g->N = N; g->start_r = sr; g->start_c = sc; g->goal_r = gr; g->goal_c = gc;
+    g->density = density; g->seed = 42u;
+    memset(g->cells, 0, sizeof(g->cells));
+    char row[MAX_N + 8];
+    for (int r = 0; r < N; r++) {
+        if (fscanf(f, "%s", row) != 1) { fclose(f); return 0; }
+        for (int c = 0; c < N && row[c]; c++)
+            g->cells[r][c] = (row[c] == '1') ? 1 : 0;
+    }
+    fclose(f);
+    return 1;
+}
 
 int main(int argc, char **argv) {
     int    N        = arg_i(argc, argv, "--N",        48);
@@ -56,6 +84,7 @@ int main(int argc, char **argv) {
     int    dynamic  = flag(argc, argv, "--dynamic");
     int    dyn_int  = arg_i(argc, argv, "--dyn-interval", 25);
     int    header   = flag(argc, argv, "--csv-header");
+    const char *grid_file = arg_s(argc, argv, "--grid", NULL);
 
     if (N > MAX_N) N = MAX_N;   /* solver static cap */
 
@@ -77,7 +106,14 @@ int main(int argc, char **argv) {
 
     for (int rep = 0; rep < repeats + warmup; rep++) {
         Grid g;
-        grid_init(&g, N, density, seed);
+        if (grid_file) {
+            if (!load_grid(&g, grid_file, density)) {
+                fprintf(stderr, "failed to load grid: %s\n", grid_file);
+                return 1;
+            }
+        } else {
+            grid_init(&g, N, density, seed);
+        }
         aco_init(st, &g);
 
         int valid_last = 0;

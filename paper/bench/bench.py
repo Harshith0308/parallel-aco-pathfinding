@@ -94,15 +94,16 @@ def _bin_path():
 
 
 def run_c(N, density, ants, iters, threads, repeats, warmup,
-          alpha=1.0, beta=2.5, rho=0.10, seed=42):
-    out = subprocess.check_output(
-        [_bin_path(),
-         "--N", str(N), "--density", str(density), "--ants", str(ants),
-         "--iters", str(iters), "--threads", str(threads),
-         "--repeats", str(repeats), "--warmup", str(warmup),
-         "--alpha", str(alpha), "--beta", str(beta), "--rho", str(rho),
-         "--seed", str(seed)],
-        text=True)
+          alpha=1.0, beta=2.5, rho=0.10, seed=42, grid_file=None):
+    cmd = [_bin_path(),
+           "--N", str(N), "--density", str(density), "--ants", str(ants),
+           "--iters", str(iters), "--threads", str(threads),
+           "--repeats", str(repeats), "--warmup", str(warmup),
+           "--alpha", str(alpha), "--beta", str(beta), "--rho", str(rho),
+           "--seed", str(seed)]
+    if grid_file:
+        cmd += ["--grid", grid_file]
+    out = subprocess.check_output(cmd, text=True)
     rows = []
     for line in out.strip().splitlines():
         f = line.split(",")
@@ -111,16 +112,57 @@ def run_c(N, density, ants, iters, threads, repeats, warmup,
 
 
 # ---------------------------------------------------------------------------
+# Shared-grid I/O — lets both back-ends solve the IDENTICAL instance
+# ---------------------------------------------------------------------------
+
+def write_grid_file(grid, path):
+    with open(path, "w") as f:
+        f.write(f"{grid.N} {grid.start[0]} {grid.start[1]} "
+                f"{grid.goal[0]} {grid.goal[1]}\n")
+        for r in range(grid.N):
+            f.write("".join("1" if grid.grid[r, c] else "0"
+                            for c in range(grid.N)) + "\n")
+
+
+def load_py_grid(path, density):
+    import numpy as np
+    with open(path) as f:
+        N, sr, sc, gr, gc = map(int, f.readline().split())
+        cells = np.array([[1 if ch == "1" else 0 for ch in f.readline().strip()]
+                          for _ in range(N)], dtype=np.int8)
+    g = Grid.__new__(Grid)
+    g.N = N
+    g.obstacle_density = density
+    g.start = (sr, sc)
+    g.goal = (gr, gc)
+    g.grid = cells
+    return g
+
+
+def make_feasible_grid(N, density, seed0, path, max_tries=400):
+    """Find a grid at the EXACT requested density that has a start->goal path
+    (scanning seeds), write it to `path`, and return (feasible, seed_used)."""
+    for k in range(max_tries):
+        g = Grid(N, obstacle_density=density, seed=seed0 + k)
+        if g.has_path():
+            write_grid_file(g, path)
+            return True, seed0 + k
+    return False, None
+
+
+# ---------------------------------------------------------------------------
 # Python multiprocessing runner
 # ---------------------------------------------------------------------------
 
 def run_py(N, density, ants, iters, workers, repeats, warmup,
-           parallel=True, alpha=1.0, beta=2.5, rho=0.10, seed=42):
+           parallel=True, alpha=1.0, beta=2.5, rho=0.10, seed=42,
+           grid_file=None):
     rows = []
     for rep in range(repeats + warmup):
-        grid = Grid(N, obstacle_density=density, seed=seed)
-        if not grid.has_path():
-            grid = Grid(N, obstacle_density=min(density, 0.15), seed=seed)
+        # Shared instance when provided; otherwise generate (Phase A workload
+        # is feasible by construction). No silent density-lowering fallback.
+        grid = load_py_grid(grid_file, density) if grid_file \
+            else Grid(N, obstacle_density=density, seed=seed)
         aco = ACOPathfinder(grid, n_ants=ants, n_iterations=iters,
                             alpha=alpha, beta=beta, rho=rho,
                             n_processes=workers)
@@ -151,6 +193,8 @@ def run_py(N, density, ants, iters, workers, repeats, warmup,
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="fast smoke sweep")
+    ap.add_argument("--phase", choices=["A", "B", "both"], default="both",
+                    help="run only one phase (merges with existing raw.csv)")
     ap.add_argument("--out", default=RESULTS)
     args = ap.parse_args()
 
@@ -185,28 +229,44 @@ def main():
         return new_rows
 
     # ---- Phase A: strong scaling ----
-    print(f"\n[Phase A] strong scaling  N={N} density={density} "
-          f"ants={ants} iters={iters} repeats={repeats}")
-    print("  C/OpenMP serial baseline (1 thread) + thread sweep ...")
-    for t in thread_list:
-        print(f"    C  threads={t}")
-        rows += tag(run_c(N, density, ants, iters, t, repeats, warmup), "A")
-    print("  Python multiprocessing process sweep ...")
-    for w in thread_list:
-        print(f"    PY threads={w}")
-        rows += tag(run_py(N, density, ants, iters, w, repeats, warmup, parallel=True), "A")
-    print("  Python pure-serial reference ...")
-    rows += tag(run_py(N, density, ants, iters, 1, repeats, warmup, parallel=False), "A")
+    if args.phase in ("A", "both"):
+        print(f"\n[Phase A] strong scaling  N={N} density={density} "
+              f"ants={ants} iters={iters} repeats={repeats}")
+        print("  C/OpenMP serial baseline (1 thread) + thread sweep ...")
+        for t in thread_list:
+            print(f"    C  threads={t}")
+            rows += tag(run_c(N, density, ants, iters, t, repeats, warmup), "A")
+        print("  Python multiprocessing process sweep ...")
+        for w in thread_list:
+            print(f"    PY threads={w}")
+            rows += tag(run_py(N, density, ants, iters, w, repeats, warmup, parallel=True), "A")
+        print("  Python pure-serial reference ...")
+        rows += tag(run_py(N, density, ants, iters, 1, repeats, warmup, parallel=False), "A")
 
-    # ---- Phase B: quality vs density ----
-    qt = min(8, cores)
-    print(f"\n[Phase B] quality vs density  (threads={qt}, iters={q_iters})")
-    for d in densities:
-        print(f"    density={d:.2f}")
-        rows += tag(run_c(N, d, ants, q_iters, qt, repeats, warmup), "B")
-        rows += tag(run_py(N, d, ants, q_iters, qt, repeats, warmup, parallel=True), "B")
+    # ---- Phase B: quality vs density (shared, exactly-density feasible grids) ----
+    if args.phase in ("B", "both"):
+        qt = min(8, cores)
+        gdir = os.path.join(args.out, "grids")
+        os.makedirs(gdir, exist_ok=True)
+        print(f"\n[Phase B] quality vs density  (threads={qt}, iters={q_iters})")
+        print("  Both back-ends solve the SAME feasible grid per density.")
+        for d in densities:
+            gp = os.path.join(gdir, f"grid_N{N}_d{int(round(d * 100)):02d}.txt")
+            feasible, seed_used = make_feasible_grid(N, d, 1000, gp)
+            if not feasible:
+                print(f"    density={d:.2f}  INFEASIBLE after search -> skipped")
+                continue
+            print(f"    density={d:.2f}  (shared grid seed={seed_used})")
+            rows += tag(run_c(N, d, ants, q_iters, qt, repeats, warmup, grid_file=gp), "B")
+            rows += tag(run_py(N, d, ants, q_iters, qt, repeats, warmup,
+                               parallel=True, grid_file=gp), "B")
 
-    # ---- write CSV ----
+    # ---- write CSV (merge-preserve: keep the phase we did NOT run) ----
+    if args.phase != "both" and os.path.exists(csv_path):
+        with open(csv_path) as f:
+            kept = [r for r in csv.DictReader(f) if r.get("phase") != args.phase]
+        rows = kept + rows
+
     with open(csv_path, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=CSV_COLS)
         w.writeheader()

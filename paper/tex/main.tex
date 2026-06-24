@@ -157,8 +157,15 @@ worker counts and we measure \emph{pure} speedup.
 We define speedup $S(p)=T(1)/T(p)$ and efficiency $E(p)=S(p)/p$, where $T(p)$ is
 the mean per-iteration time at $p$ workers.
 
+\textbf{Quality experiment.} For the density study (\S\ref{sec:results}) we
+generate, for each density, a single obstacle layout at the \emph{exact} target
+density that is verified feasible by breadth-first search, and solve that same
+shared instance with both back-ends. This removes any layout or
+feasibility-handling asymmetry between the two implementations.
+
 % ===========================================================================
 \section{Results}
+\label{sec:results}
 \subsection{Strong scaling}
 Fig.~\ref{fig:runtime} shows per-iteration time and Fig.~\ref{fig:speedup} the
 resulting speedup. The C/OpenMP solver scales to a peak of $5.7\times$ at $12$
@@ -197,14 +204,18 @@ $94\times$ faster than the Python multiprocessing one ($118.3$\,ms). Together th
 isolate the cost of process-based parallelism for fine-grained tasks.
 
 \subsection{Solution quality vs obstacle density}
-Fig.~\ref{fig:quality} reports best path length as obstacle density increases.
-Across feasible densities ($0.05$--$0.35$) both implementations find paths of
-comparable length (roughly $115$--$160$ units) with a $100\%$ success rate; path
-length does not increase monotonically with density because added obstacles can
-also remove longer detours. At density $0.40$ the fixed-seed grid used by the C
-solver is \emph{infeasible} (breadth-first search confirms no start--goal path),
-so ACO correctly returns no solution; this marks a feasibility threshold for this
-seed rather than a quality regression.
+For this experiment both back-ends solve the \emph{identical} grid at each
+density: we generate one obstacle layout at the exact target density, verify with
+breadth-first search that a start--goal path exists, and feed the same instance to
+both implementations (\S\ref{sec:setup}). Fig.~\ref{fig:quality} reports best path
+length as obstacle density increases. Both implementations achieve a $100\%$
+success rate across all tested densities ($0.05$--$0.40$) and produce paths of
+comparable length---within roughly $10$ units of one another at every density,
+with overlapping 95\% confidence intervals---confirming that the two
+implementations are algorithmically equivalent and that the parallelization
+strategy does not affect solution quality. Path length tends to decrease slightly
+at higher densities for these instances, because denser obstacle fields prune long
+detours and constrain ants toward more direct routes.
 
 \begin{figure}[t]\centering
 \includegraphics[width=\columnwidth]{fig_quality_density.png}
@@ -214,14 +225,12 @@ seed rather than a quality regression.
 % ===========================================================================
 \section{Discussion and Limitations}
 Several limitations bound our claims. The C solver caps the grid at $N\le 50$
-(static allocation); larger maps would require dynamic allocation. The two
-back-ends generate obstacle layouts independently, so solution quality is compared
-in aggregate rather than per-instance. The two harnesses also differ in how they
-treat infeasible grids---the Python runner reduces density until a path exists,
-whereas the C driver does not---which biases the high-density quality comparison;
-a unified feasibility policy is needed for a strict per-instance quality study.
-Finally, results are single-machine and single-architecture; distributed-memory
-(e.g.\ MPI) scaling and a GPU implementation are left to future work.
+(static allocation); larger maps would require dynamic allocation, and the scaling
+study uses a single workload size. The quality study uses one feasible instance
+per density; a larger battery of instances and seeds per density would tighten the
+quality estimates. Finally, results are single-machine and single-architecture;
+distributed-memory (e.g.\ MPI) scaling and a GPU implementation are left to future
+work.
 
 % ===========================================================================
 \section{Conclusion}
@@ -233,8 +242,8 @@ $4.6\times$ and---owing to per-iteration data serialization---was even slower th
 serial Python at a single worker. For fine-grained metaheuristics like ACO, the
 execution model matters as much as the algorithm: shared-memory threading avoids
 the data-movement tax that limits process-based parallelism. Future work includes
-distributed-memory and GPU back-ends, larger maps, and a unified feasibility
-policy for strict per-instance quality comparison.
+distributed-memory (MPI) and GPU back-ends, larger maps, and a broader battery of
+instances per density.
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}

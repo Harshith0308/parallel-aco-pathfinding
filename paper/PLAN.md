@@ -39,9 +39,9 @@ report — that framing is what makes it publishable given how well-studied ACO 
       university / city) on lines 27–29 of `main.tex`
 - [ ] **Literature review** — expand Related Work with ~10 more real references
       (ACO path planning + parallel ACO) and verify them. Biggest remaining task.
-- [ ] Unify the infeasible-grid policy across both back-ends (the Python runner
-      lowers density when no path exists; the C driver does not) for a strict
-      per-instance quality comparison
+- [x] Unify the infeasible-grid policy: both back-ends now solve the *identical*
+      feasibility-checked grid per density (shared `--grid` files); silent
+      density-lowering removed. Phase B is now a true per-instance comparison.
 - [ ] Optional: larger grids (requires raising `MAX_N` / dynamic allocation in C),
       multiple grid sizes, GPU or multi-node comparison
 - [ ] Proofread, write abstract last, get a faculty read
