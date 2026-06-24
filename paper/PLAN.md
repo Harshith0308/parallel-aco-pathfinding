@@ -32,10 +32,16 @@ report — that framing is what makes it publishable given how well-studied ACO 
 - [x] Unified runner: Python mp + C/OpenMP, platform capture (`bench/bench.py`)
 - [x] Publication-quality figures: speedup, efficiency, Amdahl, quality (`bench/plots.py`)
 - [x] LaTeX paper scaffold, IEEEtran (`tex/main.tex`, `tex/refs.bib`)
-- [ ] Run full benchmark and regenerate figures
-- [ ] Fill every `[[FILL: ...]]` marker in `main.tex` with real numbers
-- [ ] **Literature review** — add 10–15 real references (ACO path planning +
-      parallel ACO). This is the biggest remaining task.
+- [x] Run full benchmark (145 rows) and regenerate figures
+- [x] Fill all *data-derived* `[[FILL]]` markers (platform, workload, speedups,
+      Amdahl serial fraction, serialization overhead, quality trend)
+- [ ] Fill remaining `[[FILL]]` markers — your **author affiliation** (dept /
+      university / city) on lines 27–29 of `main.tex`
+- [ ] **Literature review** — expand Related Work with ~10 more real references
+      (ACO path planning + parallel ACO) and verify them. Biggest remaining task.
+- [ ] Unify the infeasible-grid policy across both back-ends (the Python runner
+      lowers density when no path exists; the C driver does not) for a strict
+      per-instance quality comparison
 - [ ] Optional: larger grids (requires raising `MAX_N` / dynamic allocation in C),
       multiple grid sizes, GPU or multi-node comparison
 - [ ] Proofread, write abstract last, get a faculty read
