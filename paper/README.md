@@ -12,7 +12,10 @@ paper/
 │   ├── build.sh         # compile the driver
 │   ├── bench.py         # runs Python mp + C/OpenMP, writes results/raw.csv
 │   └── plots.py         # publication-quality figures from raw.csv
-├── results/             # raw.csv, platform.json, figures/  (generated)
+├── results/             # raw.csv, platform.json, grids/, figures/  (generated)
+├── literature/
+│   ├── SEARCH_GUIDE.md         # how to run the literature search
+│   └── related_work_matrix.md  # fill-in table -> Related Work prose
 └── tex/
     ├── main.tex         # IEEEtran paper scaffold (fill the [[FILL]] markers)
     └── refs.bib         # seed bibliography (expand it yourself)
